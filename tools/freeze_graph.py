@@ -55,15 +55,15 @@ FLAGS = None
 
 
 def freeze_graph(input_graph,
-                 input_saver,
-                 input_binary,
                  input_checkpoint,
                  output_node_names,
-                 restore_op_name,
-                 filename_tensor_name,
                  output_graph,
-                 clear_devices,
-                 initializer_nodes,
+                 initializer_nodes="",
+                 input_saver="",
+                 input_binary=False,
+                 clear_devices=True,
+                 restore_op_name="save/restore_all",
+                 filename_tensor_name="save/Const:0",
                  variable_names_blacklist=""):
   """Converts all variables in a graph and checkpoint into constants."""
 
@@ -125,7 +125,7 @@ def freeze_graph(input_graph,
     f.write(output_graph_def.SerializeToString())
   print("%d ops in the final graph." % len(output_graph_def.node))
 
-
+'''
 def main(unused_args):
   freeze_graph(FLAGS.input_graph, FLAGS.input_saver, FLAGS.input_binary,
                FLAGS.input_checkpoint, FLAGS.output_node_names,
@@ -200,3 +200,5 @@ if __name__ == "__main__":
       """)
   FLAGS, unparsed = parser.parse_known_args()
   app.run(main=main, argv=[sys.argv[0]] + unparsed)
+'''
+

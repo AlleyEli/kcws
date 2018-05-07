@@ -6,7 +6,46 @@
 import sys
 import random
 
+def filter_sentence(srcfile, trainfile, testfile):
+    SENTENCE_LEN = 80
+    fp = open(srcfile, "r")
+    nl = 0
+    bad = 0
+    test = 0
+    tr_p = open(trainfile, "w")
+    te_p = open(testfile, "w")
+    while True:
+        line = fp.readline()
+        if not line:
+            break
+        line = line.strip()
+        if not line:
+            continue
+        ss = line.split(' ')
 
+        if len(ss) != (2 * SENTENCE_LEN):
+            print("len is:%d" % (len(ss)))
+            continue
+        numV = 0
+        for i in range(SENTENCE_LEN):
+            if int(ss[i]) != 0:
+                numV += 1
+                if numV > 2:
+                    break
+        if numV <= 2:
+            bad += 1
+        else:
+            r = random.random()
+            if r <= 0.02 and test < 8000:
+                te_p.write("%s\n" % (line))
+                test += 1
+            else:
+                tr_p.write("%s\n" % (line))
+        nl += 1
+    fp.close()
+    print("got bad:%d" % (bad))
+
+'''
 def main(argc, argv):
     if argc < 2:
         print("Usage:%s <input>" % (argv[0]))
@@ -52,3 +91,4 @@ def main(argc, argv):
 
 if __name__ == '__main__':
     main(len(sys.argv), sys.argv)
+'''

@@ -5,6 +5,8 @@
 # @Last Modified time: 2017-01-31 11:52:33
 
 import sys
+sys.path.append(r"bazel-bin/utils")
+
 import os
 import w2v
 
@@ -155,6 +157,38 @@ def loadPosVob(path, vob):
   pass
 
 
+def generatepostrain(word_vobfile, char_vobfile, pos_vobfile, corpusdir, outfile):
+  global totalLine
+  global longLine
+  global totalChars
+
+  wvobPath = word_vobfile
+  cvobpath = char_vobfile
+  pvobPath = pos_vobfile
+  rootDir = corpusdir
+  word_vob = w2v.Word2vecVocab()
+  word_vob.Load(wvobPath)
+  char_vob = w2v.Word2vecVocab()
+  char_vob.Load(cvobpath)
+  posVob = {}
+  loadPosVob(pvobPath, posVob)
+  out = open(outfile, "w")
+  for dirName, subdirList, fileList in os.walk(rootDir):
+    # curDir = os.path.join(rootDir, dirName)
+    for file in fileList:
+      if file.endswith(".txt"):
+        curFile = os.path.join(dirName, file)
+        #print("processing:%s" % (curFile))
+        fp = open(curFile, "r")
+        for line in fp.readlines():
+          line = line.strip()
+          processLine(line, out, word_vob, char_vob, posVob)
+        fp.close()
+  out.close()
+  print("total:%d, long lines:%d, chars:%d" %
+        (totalLine, longLine, totalChars))
+
+'''
 def main(argc, argv):
   global totalLine
   global longLine
@@ -192,3 +226,4 @@ def main(argc, argv):
 
 if __name__ == '__main__':
   main(len(sys.argv), sys.argv)
+'''

@@ -5,7 +5,35 @@
 # @Last Modified time: 2016-12-09 19:49:37
 import sys
 
+def replaceUNK(preVocab, preChars, destChars):
+  vp = open(preVocab, "r")
+  inp = open(preChars, "r")
+  oup = open(destChars, "w")
+  vobsMap = {}
+  for line in vp:
+    line = line.strip()
+    ss = line.split(" ")
+    vobsMap[ss[0]] = 1
+  while True:
+    line = inp.readline()
+    if not line:
+      break
+    line = line.strip()
+    if not line:
+      continue
+    ss = line.split(" ")
+    tokens = []
+    for s in ss:
+      if s in vobsMap:
+        tokens.append(s)
+      else:
+        tokens.append("<UNK>")
+    oup.write("%s\n" % (" ".join(tokens)))
+  oup.close()
+  inp.close()
+  vp.close()
 
+''''
 def main(argc, argv):
   if argc < 4:
     print("Usage:%s <vob> <input> <output>" % (argv[0]))
@@ -40,3 +68,5 @@ def main(argc, argv):
 
 if __name__ == '__main__':
   main(len(sys.argv), sys.argv)
+
+'''

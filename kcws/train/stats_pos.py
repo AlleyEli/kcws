@@ -81,6 +81,34 @@ def processLine(line, out):
         pass
 
 
+def stats_pos(corpusdir, vocabfile, linesPosfile):
+    global totalLine
+    global longLine
+    global posMap
+   
+    rootDir = corpusdir
+    out = open(linesPosfile, "w")
+    tagvobFp = open(vocabfile, "w")
+    for dirName, subdirList, fileList in os.walk(rootDir):
+        #curDir = os.path.join(rootDir, dirName)
+        for file in fileList:
+            if file.endswith(".txt"):
+                curFile = os.path.join(dirName, file)
+                fp = open(curFile, "r")
+                for line in fp.readlines():
+                    line = line.strip()
+                    processLine(line, out)
+                fp.close()
+    out.close()
+    print("total:%d, long lines:%d" % (totalLine, longLine))
+    print("total pos tags:%d" % (len(posMap)))
+    idx = 0
+    for k, v in posMap.iteritems():
+        tagvobFp.write("%s\t%d\n" % (k, idx + 1))
+        idx += 1
+
+
+'''
 def main(argc, argv):
     global totalLine
     global longLine
@@ -112,3 +140,4 @@ def main(argc, argv):
 
 if __name__ == '__main__':
     main(len(sys.argv), sys.argv)
+'''

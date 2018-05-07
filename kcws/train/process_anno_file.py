@@ -6,6 +6,7 @@
 import sys
 import os
 
+
 totalLine = 0
 longLine = 0
 maxLen = 80
@@ -81,7 +82,7 @@ def processLine(line, out):
   except Exception as e:
     pass
 
-
+'''
 def main(argc, argv):
   global totalLine
   global longLine
@@ -103,7 +104,50 @@ def main(argc, argv):
         fp.close()
   out.close()
   print("total:%d, long lines:%d" % (totalLine, longLine))
+'''
 
+def __processAnnoFile(rootDir, outfile):
+  global totalLine
+  global longLine
 
+  out = open(outfile, "w")
+  for dirName, subdirList, fileList in os.walk(rootDir):
+    for file in fileList:
+      if file.endswith(".txt"):
+        curFile = os.path.join(dirName, file)
+        print("processing:%s" % (curFile))
+        fp = open(curFile, "r")
+        for line in fp.readlines():
+          line = line.strip()
+          processLine(line, out)
+        fp.close()
+  out.close()
+  print("total:%d, long lines:%d" % (totalLine, longLine))
+
+def __processAnnoSentence(srcstr):
+  outstr= ''
+  if srcstr:
+    # print(srcstr)
+    srcstr = srcstr.strip()
+    ustr = unicode(srcstr.decode('utf8'))
+    for c in ustr:
+      outstr=outstr + c + u" "
+    # print(len(outstr))
+    outstr = outstr[:-1]
+    # print(len(outstr))
+  else:
+    print("source string invalid")
+
+  return outstr.encode("UTF-8")
+
+def processAnnoFile(srcdir, outfile):
+  __processAnnoFile(srcdir, outfile)
+
+def processAnnoSentence(srcstr):
+  return __processAnnoSentence(srcstr)
+
+'''
 if __name__ == '__main__':
   main(len(sys.argv), sys.argv)
+'''
+

@@ -5,17 +5,11 @@
 # @Last Modified time: 2016-11-20 15:07:51
 import sys
 import os
+sys.path.append(r"bazel-bin/utils")
 import w2v
 
 
-def main(argc, argv):
-  if argc < 3:
-    print("Usage:%s <word2vec_vocab_path> <output_path>" % (argv[0]))
-    sys.exit(1)
+def dumpVocab(charVecfile, basicVocabfile):
   vob = w2v.Word2vecVocab()
-  vob.Load(argv[1])
-  vob.DumpBasicVocab(argv[2])
-
-
-if __name__ == '__main__':
-  main(len(sys.argv), sys.argv)
+  vob.Load(charVecfile)
+  vob.DumpBasicVocab(basicVocabfile)

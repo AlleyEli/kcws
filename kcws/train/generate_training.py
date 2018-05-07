@@ -5,6 +5,8 @@
 # @Last Modified time: 2017-01-25 16:54:11
 
 import sys
+sys.path.append(r"bazel-bin/utils")
+
 import os
 import w2v
 from sentence import Sentence
@@ -14,7 +16,6 @@ longLine = 0
 
 MAX_LEN = 80
 totalChars = 0
-
 
 def processToken(token, sentence, out, end, vob):
     global totalLine
@@ -99,6 +100,33 @@ def processLine(line, out, vob):
         pass
 
 
+def generateTraining(vecFile, corpusdir, destfile):
+    global totalLine
+    global longLine
+    global totalChars
+
+    #w2v = ctypes.cdll.LoadLibrary("bazel-bin/utils/libw2v_hy.so")
+    rootDir = corpusdir
+    print("generateTraining getW2vVocab")
+    vob = w2v.Word2vecVocab()
+    vob.Load(vecFile)
+    out = open(destfile, "w")
+    for dirName, subdirList, fileList in os.walk(rootDir):
+        #curDir = os.path.join(rootDir, dirName)
+        for file in fileList:
+            if file.endswith(".txt"):
+                curFile = os.path.join(dirName, file)
+                #print("processing:%s" % (curFile))
+                fp = open(curFile, "r")
+                for line in fp.readlines():
+                    line = line.strip()
+                    processLine(line, out, vob)
+                fp.close()
+    out.close()
+    print("total:%d, long lines:%d, chars:%d" %
+          (totalLine, longLine, totalChars))
+
+'''
 def main(argc, argv):
     global totalLine
     global longLine
@@ -129,3 +157,4 @@ def main(argc, argv):
 
 if __name__ == '__main__':
     main(len(sys.argv), sys.argv)
+'''

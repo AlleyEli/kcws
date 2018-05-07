@@ -164,6 +164,37 @@ cc_binary(
 )
 
 cc_library(
+    name = "kcws_pos_use",
+    srcs = [
+        "kcws_pos_use.cc",
+    ],
+    hdrs = ["kcws_pos_use.h"],
+    linkopts = ["-ldl"],
+    deps = [
+        ":tf_seg_model",
+        "//base",
+    ],
+)
+
+cc_binary(
+    name = "py_kcws_pos.so",
+    srcs = glob([
+        "py_kcws_pos.cc",
+    ]),
+    copts = [
+        "-std=c++11",
+        "-fPIC",
+    ],
+    linkshared = 1,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":kcws_pos_use",
+        "//base",
+        "//third_party/pybind11",
+    ],
+)
+
+cc_library(
     name = "ac_scanner",
     srcs = [
         "ac_scanner.h",

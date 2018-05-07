@@ -72,7 +72,26 @@ def processLine(line, out):
   except Exception as e:
     pass
 
+def prepare_pos(corpusdir, linesfile):
+  global totalLine
+  global longLine
 
+  out = open(linesfile, "w")
+  for dirName, subdirList, fileList in os.walk(corpusdir):
+    # curDir = os.path.join(rootDir, dirName)
+    for file in fileList:
+      if file.endswith(".txt"):
+        curFile = os.path.join(dirName, file)
+        # print("processing:%s" % (curFile))
+        fp = open(curFile, "r")
+        for line in fp.readlines():
+          line = line.strip()
+          processLine(line, out)
+        fp.close()
+  out.close()
+  print("total:%d, long lines:%d" % (totalLine, longLine))
+
+'''
 def main(argc, argv):
   global totalLine
   global longLine
@@ -98,3 +117,4 @@ def main(argc, argv):
 
 if __name__ == '__main__':
   main(len(sys.argv), sys.argv)
+'''

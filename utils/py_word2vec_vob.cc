@@ -13,7 +13,7 @@
 namespace py = pybind11;
 
 PYBIND11_PLUGIN(w2v) {
-  py::module m("w2v", "python binding for  word2vec vocab");
+  py::module m("w2v", "python binding for word2vec vocab");
   py::class_<utils::Word2vecVocab>(m, "Word2vecVocab", "python class Word2vecVocab")
   .def(py::init())
   .def("Load", &utils::Word2vecVocab::Load, "load word2vec from text file")
