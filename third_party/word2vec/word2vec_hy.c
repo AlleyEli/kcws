@@ -665,6 +665,8 @@ void word2vec_train(char* srcfile, char* destfile, int _size, float _sample,
   cbow = _cbow;
   min_count = _mincount;
 
+  if (cbow) alpha = 0.05;
+
   vocab = (struct vocab_word *)calloc(vocab_max_size, sizeof(struct vocab_word));
   vocab_hash = (int *)calloc(vocab_hash_size, sizeof(int));
   expTable = (real *)malloc((EXP_TABLE_SIZE + 1) * sizeof(real));

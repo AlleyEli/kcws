@@ -26,6 +26,7 @@ void kcwsPosProcess::kcws_pos_process(const char* srcsentence, char * outsentenc
     kcws::TfSegModel model;
     std::vector<std::string> result;
     std::vector<std::string> tags;
+    VLOG(0) << "got src:"+ sentence;
     CHECK(model.LoadModel(model_path, 
                           vocab_path,
                           max_sentence_len, 

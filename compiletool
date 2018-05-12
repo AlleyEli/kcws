@@ -1,0 +1,10 @@
+# !/bin/bash
+
+# set -x 
+
+echo "====== compile lib start ======"
+
+bazel build third_party/word2vec:word2vec_hy && \
+bazel build kcws/cc:dump_vocab && \
+bazel build kcws/cc:py_kcws_pos.so
+echo "====== compile lib end ======"
