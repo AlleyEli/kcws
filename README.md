@@ -6,8 +6,8 @@
 * 构建
   1. 安装好bazel代码构建工具(版本0.45)，安装好tensorflow（安装最近的tensorflow即可)
   2. 切换到本项目代码目录，运行
-  > ./configure
-  > ./compiletool
+    > ./configure  
+    > ./compiletool
 * 使用
   参考:kcws_api_test.py 和 kcws_api.py 直接训练和使用
   * 注意类使用顺序: cwsTrain --> posTrain --> CwsPosUse
