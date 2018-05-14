@@ -1,3 +1,11 @@
+/*
+ *
+ * Filename:  kcws_pos_use.cc
+ * Author:  Alley
+ * Create Time: 2018-04-28
+ * Description: use model api
+ *
+ */
 #include "kcws_pos_use.h"
 
 
@@ -26,37 +34,39 @@ void kcwsPosProcess::kcws_pos_process(const char* srcsentence, char * outsentenc
     kcws::TfSegModel model;
     std::vector<std::string> result;
     std::vector<std::string> tags;
-    VLOG(0) << "got src:"+ sentence;
+    VLOG(0) << "Got src:  "+ sentence;
     CHECK(model.LoadModel(model_path, 
                           vocab_path,
                           max_sentence_len, 
                           user_dict_path)) << "Load model error";
-    if (!pos_model_path.empty()) {
-      kcws::PosTagger* tagger = new kcws::PosTagger;
-      CHECK(tagger->LoadModel(pos_model_path,
-                              word_vocab_path,
-                              vocab_path,
-                              pos_vocab_path,
-                              max_word_num)) << "load pos model error";
-      model.SetPosTagger(tagger);
+    if (use_pos && !pos_model_path.empty()) {
+        kcws::PosTagger* tagger = new kcws::PosTagger;
+        CHECK(tagger->LoadModel(pos_model_path,
+                                word_vocab_path,
+                                vocab_path,
+                                pos_vocab_path,
+                                max_word_num)) << "load pos model error";
+        model.SetPosTagger(tagger);
     }
-    if (model.Segment(sentence, &result, &tags)) {
-      if (result.size() == tags.size()) {
-        int nl = result.size();
-        for (int i = 0; i < nl; i++) {
-          resultsentence += result[i] + "/" + tags[i] + " ";
+    VLOG(0) << "Load model end";
+
+    if (use_pos) {
+        CHECK(model.Segment(sentence, &result, &tags)) << "segment error 1";
+        if (result.size() == tags.size()) {
+            int nl = result.size();
+            for (int i = 0; i < nl; i++) {
+                resultsentence += result[i] + "/" + tags[i] + " ";
+            }
+        } else {
+            for (std::string str : result) {
+                resultsentence += str + ' ';
+            }
         }
-      } else {
+    } else {
+        CHECK(model.Segment(sentence, &result)) << "segment error 2";
         for (std::string str : result) {
-          resultsentence += str + ' ';
+            resultsentence += str + ' ';
         }
-      }
     }
-
     outsentence = (char *)resultsentence.data();
-} 
-
-/*
-int cws_process(){
-
-}*/
+}

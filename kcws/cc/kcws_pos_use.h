@@ -1,3 +1,11 @@
+/*
+ *
+ * Filename:  kcws_pos_use.cc
+ * Author:  Alley
+ * Create Time: 2018-04-28
+ * Description: use model api
+ *
+ */
 #ifndef __SEG_BACKEND_API_HY__
 #define __SEG_BACKEND_API_HY__
 

@@ -2,6 +2,8 @@
 # @Author: Alley
 # @Date:   2018-05-10
 
+# Class usage sequence:
+# CwsTrain --> PosTrain --> CwsPosUse
 
 import os
 import sys
@@ -26,6 +28,7 @@ import dump_vocab as dv
 import train_pos_hy as tp
 import freeze_graph as fp
 
+
 # class Log:
 #     HEAD = '\033[92m'
 #     TAIL = '\033[0m'
@@ -33,14 +36,16 @@ import freeze_graph as fp
 #     @staticmethod
 #     def p(var):
 #         '''
-#             print green color log
+#             print coloured log
 #         '''
 #         print Log.HEAD, var, Log.TAIL
+
 
 class CwsPosUse:
     '''
         CwsPosUse 为经过CwsPosTrain训练好模型后,可通过CwsPosUse使用模型进行分词和词性标注
     '''
+
     def setEnv(self, cwsModelfile=None, cwsVocabfile=None, posModelfile=None, 
             posVocabfile=None, **kwargs):
         '''
@@ -52,9 +57,9 @@ class CwsPosUse:
                 posModelfile: [IN] 词性标注模型训练后导出后的文件
                 posVocabfile: [IN] 词性标注语料生成特征向量导出后的文件
                 kwargs:
-                  maxSentenceLen: 最大句子长度值
-                  maxWordNum: 最大单词长度值
-                  userDictfile: [IN] 用户词典文件
+                  maxSentenceLen: 最大句子长度值,默认值为80
+                  maxWordNum: 最大单词长度值,默认值为50
+                  userDictfile: [IN] 用户词典文件,可以不设置
         '''
         cwsModel = cwsModelfile if cwsModelfile else "kcws/models/cws_model.pbtxt"
         cwsVocab = cwsVocabfile if cwsVocabfile else "kcws/models/basic_vocab.txt"
@@ -74,8 +79,8 @@ class CwsPosUse:
             描述:
                 使用模型进行分词和词性标注
             参数:
-                srcstr: 原始字符串
-                deststr: 分词后和词性标注后的字符串
+                srcstr: [IN] 原始字符串
+                deststr: [OUT] 分词后和词性标注后的字符串
                 usePos: 是否使用词性标注,若为false则只进行分词
         '''
         self.kp.kcwsPosProcessSentence(srcstr, deststr, usePos)
@@ -83,6 +88,10 @@ class CwsPosUse:
 
 # Chinese Word Segment --cws--
 class CwsTrain:
+    '''
+        对语料进行预处里和分词训练
+    '''
+
     def __init__(self, corpusdir):
         '''
             描述:
@@ -97,7 +106,7 @@ class CwsTrain:
 
     def prepWord2vec(self):
         '''
-            描述:对语料库进行一定的处理，以便适合word2vec进行train
+            描述:对语料库进行一定的处理,以便适合word2vec进行train
         '''
         fpreCharsw2v = "cws_train_tmp/pre_chars_for_w2v.txt"
         paf.processAnnoFile(self.corpusdir, fpreCharsw2v)
@@ -115,17 +124,17 @@ class CwsTrain:
         描述:
             通过word2vec训练字频表生成字特征向量
         参数:
-            charsW2Vfile:[OUT]:生成的字特征向量表文件
+            charsW2Vfile: [OUT] 生成的字特征向量表文件
             kwargs
                 size: 特征向量的维度,默认100
-                sample: 高频词汇的随机降采样的配置阈值
+                sample: 高频词汇的随机降采样的配置阈值,默认1e-3
                 negative: 是否使用Negative Sampling, 0不使用, >0为使用
                 hs: 是否使用Hierarchical Softmax算法,默认为0不使用, 1为使用,与negative互斥
                 binary: 将生成的向量保存在二进制代码中,默认为0不保存
                 iter: 迭代次数,默认为5
-                window: 表示当前词与预测词在一个句子中的最大距离是多少
+                window: 表示当前词与预测词在一个句子中的最大距离是多少,默认值5
                 cbow: 是否使用cbow模型,0表示使用skip-gram模型,1表示使用cbow模型,默认1
-                mincount: 可以对字典做截断. 词频少于min_count次数的单词会被丢弃掉
+                mincount: 可以对字典做截断. 词频少于min_count次数的单词会被丢弃掉,默认值5
         '''
         _size = kwargs["size"] if "size" in kwargs else 100
         _sample = kwargs["sample"] if "sample" in kwargs else 1e-3
@@ -144,7 +153,6 @@ class CwsTrain:
         self.w2v.word2vec_train(self.fcharsw2v, self.fcharvec, _size, _sample, _negative, 
                 _hs, _binary, _iter, _window, _cbow, _mincount)
 
-
     def prepCws(self):
         '''
             描述:对word2vec生成的vec处理成cwstrain需要的文件
@@ -162,14 +170,14 @@ class CwsTrain:
         参数:
             useIdcnn: 使用Idcnn算法还是Bi-LTSM算法,默认用为True用Idcnn
             kwargs:
-                maxSentenceLen: 最大句子长度
-                embeddingSize: 特征向量维度
-                numTags: 标签数量
-                numHidden: 隐含层单元数量
-                batchSize: 每次送给神经网络的样本数量
-                trainSteps:训练次数
-                learningRate: 学习率
-                trackHistory: 最大历史精度跟踪次数
+                maxSentenceLen: 最大句子长度,默认值80
+                embeddingSize: 特征向量维度,默认值50
+                numTags: 标签数量,默认值4
+                numHidden: 隐含层单元数量,默认值100
+                batchSize: 每次送给神经网络的样本数量,默认值100
+                trainSteps:训练次数,默认值150000
+                learningRate: 学习率,默认值0.001
+                trackHistory: 最大历史精度跟踪次数,默认值6
         '''
 
         self.cwslogdir="cws_logs"
@@ -207,6 +215,10 @@ class CwsTrain:
 
 # Part-of-speech tagging --pos--
 class PosTrain:
+    '''
+        对语料进行预处理和词性标注训练
+    '''
+
     def __init__(self, corpusdir):
         '''
             描述:
@@ -218,7 +230,7 @@ class PosTrain:
         self.corpusdir = corpusdir
         self.w2v = ctypes.cdll.LoadLibrary("bazel-bin/third_party/word2vec/libword2vec_hy.so")
         os.system("mkdir pos_train_tmp")
-    
+
     def prepWord2vec(self):
         '''
             描述:
@@ -227,7 +239,7 @@ class PosTrain:
         fposLines = "pos_train_tmp/pos_lines.txt"
         pp.prepare_pos(self.corpusdir, fposLines)
 
-        minCount = 3
+        minCount = 5
         fvocab = "pos_train_tmp/pre_word_vec.txt"
         self.w2v.word2vec_get_vocab.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int]
         self.w2v.word2vec_get_vocab(fposLines, fvocab, minCount)
@@ -242,15 +254,15 @@ class PosTrain:
         参数:
             charsW2Vfile: [OUT] 生成的词特征向量表文件
             kwargs
-                size: 词特征向量的维度,默认100
-                sample: 高频词汇的随机降采样的配置阈值
+                size: 词特征向量的维度,默认值100
+                sample: 高频词汇的随机降采样的配置阈值,默认值1e-3
                 negative: 是否使用Negative Sampling, 0不使用, >0为使用
                 hs: 是否使用Hierarchical Softmax算法,默认为0不使用, 1为使用,与negative互斥
                 binary: 将生成的向量保存在二进制代码中,默认为0不保存
-                iter: 迭代次数,默认为5
-                window: 表示当前词与预测词在一个句子中的最大距离是多少
-                cbow: 是否使用cbow模型,0表示使用skip-gram模型,1表示使用cbow模型,默认1
-                mincount: 可以对词典做截断. 词频少于min_count次数的单词会被丢弃掉
+                iter: 迭代次数,默认值5
+                window: 表示当前词与预测词在一个句子中的最大距离是多少,默认值5
+                cbow: 是否使用cbow模型,0表示使用skip-gram模型,1表示使用cbow模型,默认值1
+                mincount: 可以对词典做截断. 词频少于min_count次数的单词会被丢弃掉,默认值5
         '''
         _size = kwargs["size"] if "size" in kwargs else 100
         _sample = kwargs["sample"] if "sample" in kwargs else 1e-3
@@ -269,7 +281,7 @@ class PosTrain:
                 ctypes.c_int, ctypes.c_int, ctypes.c_int]
         self.w2v.word2vec_train(self.fposlinesUnk, self.fwordvec, _size, _sample, _negative, 
                 _hs, _binary, _iter, _window, _cbow, _mincount)
-        
+
     def prepPos(self):
         '''
             描述:
@@ -299,16 +311,16 @@ class PosTrain:
                 进行词性标注训练
             参数:
                 kwargs:
-                  maxSentenceLen: 最大句子长度
-                  embeddingWordSize: 词特征向量维度
-                  embeddingCharSize: 字特征向量维度
-                  numTags: 词性标注标签数量
-                  numHidden: 隐含层单元数量
-                  batchSize: 每次送给神经网络的样本数量
-                  trainSteps:训练次数
-                  learningRate: 学习率
-                  charWindowSize: 字符卷积的窗口大小
-                  maxCharsPerWord: 单词最大字符数量
+                  maxSentenceLen: 最大句子长度,默认值50
+                  embeddingWordSize: 词特征向量维度,默认值150
+                  embeddingCharSize: 字特征向量维度,默认值50
+                  numTags: 词性标注标签数量,默认值74
+                  numHidden: 隐含层单元数量,默认值100
+                  batchSize: 每次送给神经网络的样本数量,默认值64
+                  trainSteps:训练次数,默认值50000
+                  learningRate: 学习率,默认值0.001
+                  charWindowSize: 字符卷积的窗口大小,默认值2
+                  maxCharsPerWord: 单词最大字符数量,默认值5
         '''
         self.poslogdir = "pos_logs"
         _maxSentenceLen = kwargs["maxSentenceLen"] if "maxSentenceLen" in kwargs else 50
@@ -325,10 +337,11 @@ class PosTrain:
         tp.pos_train(self.posTrain, self.posTest, self.fwordvec, self.fcharvec, self.poslogdir, 
                 _maxSentenceLen, _embeddingWordSize, _embeddingCharSize, _numTags, 
                 _charWindowSize, _maxCharsPerWord, _numHidden, _batchSize, _trainSteps, _learningRate)
-    def freeGraph():
+
+    def freeGraph(outputGraphfile=None):
         '''
         描述:
-            导出posTrain训练好的模型
+            导出posTrain训练好的model
         参数:
             outputGraphfile: [OUT] 导出的graph文件
         '''
