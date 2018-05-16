@@ -4,17 +4,18 @@
 
 
 import kcws_api
-# cws
+# 语料库目录在../2014
+
 def cwstrain():
-        cws = kcws_api.CwsTrain("../../2014")
+        cws = kcws_api.CwsTrain("../2014")
         cws.prepWord2vec()
-        cws.word2vecTrain(sample=1e-4, hs=1)
+        cws.word2vecTrain(size=50, sample=1e-4, hs=1)
         cws.prepCws()
         cws.cwsTrain()
         cws.freeGraph()
 
 def postrain():
-        pos = kcws_api.PosTrain("../../2014")
+        pos = kcws_api.PosTrain("../2014")
         pos.prepWord2vec()
         pos.word2vecTrain(sample=1e-4, hs=1, cbow=0)
         pos.prepPos()
@@ -30,8 +31,8 @@ def usekcws():
         cp.preocessSentence("梁伟新出任漳州市副市长", outstr, usePos=False)
 
 
-cwstrain()
-#postrain()
+#cwstrain()
+postrain()
 #usekcws()
 
 

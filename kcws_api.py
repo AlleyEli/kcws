@@ -62,7 +62,7 @@ class CwsPosUse:
                   userDictfile: [IN] 用户词典文件,可以不设置
         '''
         cwsModel = cwsModelfile if cwsModelfile else "kcws/models/cws_model.pbtxt"
-        cwsVocab = cwsVocabfile if cwsVocabfile else "kcws/models/basic_vocab.txt"
+        cwsVocab = cwsVocabfile if cwsVocabfile else "kcws/models/cws_vocab.txt"
         posModel = posModelfile if posModelfile else "kcws/models/pos_model.pbtxt"
         posVocab = posVocabfile if posVocabfile else "kcws/models/pos_vocab.txt"
         wordVocab = "kcws/models/word_vocab.txt"
@@ -96,27 +96,32 @@ class CwsTrain:
         '''
             描述:
                 设置语料库目录,并加载word2vec_动态库,
-                创建temp文件夹用来存放一些中间文件
+                创建temp文件夹,设置中间文件存放位置用来存放一些中间文件
             参数:
                 corpusdir: [IN] 语料库目录路径
         '''
         self.corpusdir = corpusdir
         self.w2v = ctypes.cdll.LoadLibrary("bazel-bin/third_party/word2vec/libword2vec_hy.so")
-        os.system("mkdir cws_train_tmp")
+        self.tmpdir = "cws_train_tmp/"
+        os.system("mkdir " + tmpdir)
+        self.fcharsw2v = self.tmpdir + "chars_for_w2v.txt"
+        self.fcwsTrain = self.tmpdir + "train.txt"
+        self.fcharvec = self.tmpdir + "chars_vec.txt"
+        self.fcwsTest = self.tmpdir + "test.txt"
+        self.cwslogdir="cws_logs"
 
     def prepWord2vec(self):
         '''
             描述:对语料库进行一定的处理,以便适合word2vec进行train
         '''
-        fpreCharsw2v = "cws_train_tmp/pre_chars_for_w2v.txt"
+        fpreCharsw2v = self.tmpdir + "pre_chars_for_w2v.txt"
         paf.processAnnoFile(self.corpusdir, fpreCharsw2v)
         
         minCount = 3
-        fpreVocab = "cws_train_tmp/pre_vocab.txt"
+        fpreVocab = self.tmpdir + "pre_vocab.txt"
         self.w2v.word2vec_get_vocab.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int]
         self.w2v.word2vec_get_vocab(fpreCharsw2v, fpreVocab, minCount)
 
-        self.fcharsw2v = "cws_train_tmp/chars_for_w2v.txt"
         ru.replaceUNK(fpreVocab, fpreCharsw2v, self.fcharsw2v)
     
     def word2vecTrain(self, charvecfile=None, **kwargs):
@@ -146,7 +151,9 @@ class CwsTrain:
         _cbow = kwargs["cbow"] if "cbow" in kwargs else 1
         _mincount = kwargs["mincount"] if "mincount" in kwargs else 5
 
-        self.fcharvec = charvecfile if charvecfile else "cws_train_tmp/chars_vec.txt"
+        if charvecfile:
+            self.fcharvec = charvecfile
+                
         self.w2v.word2vec_train.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int, 
                 ctypes.c_float, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
                 ctypes.c_int, ctypes.c_int, ctypes.c_int]
@@ -157,9 +164,7 @@ class CwsTrain:
         '''
             描述:对word2vec生成的vec处理成cwstrain需要的文件
         '''
-        self.fcwsTrain = "cws_train_tmp/train.txt"
-        self.fcwsTest = "cws_train_tmp/test.txt"
-        allfile = "cws_train_tmp/cws_all.file"
+        allfile = self.tmpdir + "cws_all.file"
         gt.generateTraining(self.fcharvec, self.corpusdir, allfile)
         fs.filter_sentence(allfile, self.fcwsTrain, self.fcwsTest)
 
@@ -168,7 +173,7 @@ class CwsTrain:
         描述:
             进行分词模型训练
         参数:
-            useIdcnn: 使用Idcnn算法还是Bi-LTSM算法,默认用为True用Idcnn
+            useIdcnn: 使用Idcnn算法还是Bi-LTSM算法,默认为True用Idcnn
             kwargs:
                 maxSentenceLen: 最大句子长度,默认值80
                 embeddingSize: 特征向量维度,默认值50
@@ -179,8 +184,6 @@ class CwsTrain:
                 learningRate: 学习率,默认值0.001
                 trackHistory: 最大历史精度跟踪次数,默认值6
         '''
-
-        self.cwslogdir="cws_logs"
 
         _maxSentenceLen = kwargs["maxSentenceLen"] if "maxSentenceLen" in kwargs else 80
         _embeddingSize = kwargs["embeddingSize"] if "embeddingSize" in kwargs else 50
@@ -205,11 +208,11 @@ class CwsTrain:
         '''
 
         cwsVocab = cwsVocabfile if cwsVocabfile else "kcws/models/cws_vocab.txt"
-        dv.dumpVocab(self.charvec, cwsVocab)
+        dv.dumpVocab(self.fcharvec, cwsVocab)
 
         outputGraph = outputGraphfile if outputGraphfile else "kcws/models/cws_model.pbtxt"
         inputGraph = self.cwslogdir + "/graph.pbtxt"
-        inputCheckoint = self.cwslogdir + "/model.ckpt"
+        inputCheckPoint = self.cwslogdir + "/model.ckpt"
         outputNodeNames = "transitions,Reshape_7"
         fp.freeze_graph(inputGraph, inputCheckPoint, outputNodeNames, outputGraph)
 
@@ -229,22 +232,30 @@ class PosTrain:
         '''
         self.corpusdir = corpusdir
         self.w2v = ctypes.cdll.LoadLibrary("bazel-bin/third_party/word2vec/libword2vec_hy.so")
-        os.system("mkdir pos_train_tmp")
+        self.tmpdir = "pos_train_tmp/"
+        os.system("mkdir " + self.tmpdir)
+        
+        self.fposlinesUnk = self.tmpdir + "pos_lines_with_unk.txt"
+        self.fwordvec = self.tmpdir + "word_vec.txt"
+        self.posTrain = self.tmpdir + "train.txt"
+        self.posTest = self.tmpdir + "test.txt"
+        # fcharvec使用cwsword2vec训练结果文件
+        self.fcharvec = "cws_train_tmp/chars_vec.txt"
+        self.poslogdir = "pos_logs"
 
     def prepWord2vec(self):
         '''
             描述:
                 处理语料库文件以便适合word2vec进行train
         '''
-        fposLines = "pos_train_tmp/pos_lines.txt"
+        fposLines = self.tmpdir + "pos_lines.txt"
         pp.prepare_pos(self.corpusdir, fposLines)
 
         minCount = 5
-        fvocab = "pos_train_tmp/pre_word_vec.txt"
+        fvocab = self.tmpdir + "pre_word_vec.txt"
         self.w2v.word2vec_get_vocab.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int]
         self.w2v.word2vec_get_vocab(fposLines, fvocab, minCount)
 
-        self.fposlinesUnk = "pos_train_tmp/pos_lines_with_unk.txt"
         ru.replaceUNK(fvocab, fposLines, self.fposlinesUnk)
 
     def word2vecTrain(self, worldVecfile=None, **kwargs):
@@ -274,7 +285,8 @@ class PosTrain:
         _cbow = kwargs["cbow"] if "cbow" in kwargs else 1
         _mincount = kwargs["mincount"] if "mincount" in kwargs else 5
 
-        self.fwordvec = worldVecfile if worldVecfile else "pos_train_tmp/word_vec.txt"
+        if worldVecfile:
+            self.fwordvec = worldVecfile
 
         self.w2v.word2vec_train.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int, 
                 ctypes.c_float, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
@@ -287,16 +299,12 @@ class PosTrain:
             描述:
                 通过词向量,字向量生成训练所需文本
         '''
-        linPos = "pos_train_tmp/lines_withpos.txt"
-        fposVocab = "pos_train_tmp/pos_vocab.txt"
+        linPos = self.tmpdir + "lines_withpos.txt"
+        fposVocab = self.tmpdir + "pos_vocab.txt"
         sp.stats_pos(self.corpusdir, fposVocab, linPos)
 
-        self.posTrain = "pos_train_tmp/train.txt"
-        self.posTest = "pos_train_tmp/test.txt"
+        allfile = self.tmpdir + "pos_all.txt"
 
-        allfile = "pos_train_tmp/pos_all.txt"
-        self.fwordvec = "pos_train_tmp/word_vec.txt"
-        self.fcharvec = "cws_train_tmp/chars_vec.txt"
         gps.generatepostrain(self.fwordvec, self.fcharvec, fposVocab, self.corpusdir, allfile)
         lines = len(open(allfile,'rU').readlines())
         print "allfile lines: ", lines
@@ -322,7 +330,7 @@ class PosTrain:
                   charWindowSize: 字符卷积的窗口大小,默认值2
                   maxCharsPerWord: 单词最大字符数量,默认值5
         '''
-        self.poslogdir = "pos_logs"
+
         _maxSentenceLen = kwargs["maxSentenceLen"] if "maxSentenceLen" in kwargs else 50
         _embeddingWordSize = kwargs["embeddingWordSize"] if "embeddingWordSize" in kwargs else 150
         _embeddingCharSize = kwargs["embeddingCharSize"] if "embeddingCharSize" in kwargs else 50
@@ -338,7 +346,7 @@ class PosTrain:
                 _maxSentenceLen, _embeddingWordSize, _embeddingCharSize, _numTags, 
                 _charWindowSize, _maxCharsPerWord, _numHidden, _batchSize, _trainSteps, _learningRate)
 
-    def freeGraph(outputGraphfile=None):
+    def freeGraph(self, outputGraphfile=None):
         '''
         描述:
             导出posTrain训练好的model
