@@ -103,7 +103,7 @@ class CwsTrain:
         self.corpusdir = corpusdir
         self.w2v = ctypes.cdll.LoadLibrary("bazel-bin/third_party/word2vec/libword2vec_hy.so")
         self.tmpdir = "cws_train_tmp/"
-        os.system("mkdir " + tmpdir)
+        os.system("mkdir -p " + self.tmpdir)
         self.fcharsw2v = self.tmpdir + "chars_for_w2v.txt"
         self.fcwsTrain = self.tmpdir + "train.txt"
         self.fcharvec = self.tmpdir + "chars_vec.txt"
@@ -233,12 +233,12 @@ class PosTrain:
         self.corpusdir = corpusdir
         self.w2v = ctypes.cdll.LoadLibrary("bazel-bin/third_party/word2vec/libword2vec_hy.so")
         self.tmpdir = "pos_train_tmp/"
-        os.system("mkdir " + self.tmpdir)
+        os.system("mkdir -p " + self.tmpdir)
         
         self.fposlinesUnk = self.tmpdir + "pos_lines_with_unk.txt"
         self.fwordvec = self.tmpdir + "word_vec.txt"
-        self.posTrain = self.tmpdir + "train.txt"
-        self.posTest = self.tmpdir + "test.txt"
+        self.fposTrain = self.tmpdir + "train.txt"
+        self.fposTest = self.tmpdir + "test.txt"
         # fcharvec使用cwsword2vec训练结果文件
         self.fcharvec = "cws_train_tmp/chars_vec.txt"
         self.poslogdir = "pos_logs"
@@ -310,8 +310,8 @@ class PosTrain:
         print "allfile lines: ", lines
         os.system("sort -u "+ allfile + " > pos_train_tmp/pos_train.u")
         os.system("shuf pos_train_tmp/pos_train.u > " + allfile)
-        os.system("head -n "+ str(int(lines*0.75)) +" " + allfile +" > " + self.posTrain)
-        os.system("tail -n "+ str(int(lines*0.25)) +" " + allfile +" > " + self.posTest)
+        os.system("head -n "+ str(int(lines*0.75)) +" " + allfile +" > " + self.fposTrain)
+        os.system("tail -n "+ str(int(lines*0.25)) +" " + allfile +" > " + self.fposTest)
         
     def posTrain(self, **kwargs):
         '''
@@ -342,7 +342,7 @@ class PosTrain:
         _charWindowSize = kwargs["charWindowSize"] if "charWindowSize" in kwargs else 2
         _maxCharsPerWord = kwargs["maxCharsPerWord"] if "maxCharsPerWord" in kwargs else 5
 
-        tp.pos_train(self.posTrain, self.posTest, self.fwordvec, self.fcharvec, self.poslogdir, 
+        tp.pos_train(self.fposTrain, self.fposTest, self.fwordvec, self.fcharvec, self.poslogdir, 
                 _maxSentenceLen, _embeddingWordSize, _embeddingCharSize, _numTags, 
                 _charWindowSize, _maxCharsPerWord, _numHidden, _batchSize, _trainSteps, _learningRate)
 

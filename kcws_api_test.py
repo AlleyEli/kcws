@@ -11,15 +11,15 @@ def cwstrain():
         cws.prepWord2vec()
         cws.word2vecTrain(size=50, sample=1e-4, hs=1)
         cws.prepCws()
-        cws.cwsTrain()
+        cws.cwsTrain(embeddingSize=50)
         cws.freeGraph()
 
 def postrain():
         pos = kcws_api.PosTrain("../2014")
         pos.prepWord2vec()
-        pos.word2vecTrain(sample=1e-4, hs=1, cbow=0)
+        pos.word2vecTrain(size=100, sample=1e-4, hs=1, cbow=0)
         pos.prepPos()
-        pos.posTrain()
+        pos.posTrain(embeddingWordSize=100)
         pos.freeGraph()
         
 
@@ -32,8 +32,8 @@ def usekcws():
 
 
 #cwstrain()
-postrain()
-#usekcws()
+#postrain()
+usekcws()
 
 
 
