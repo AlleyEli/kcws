@@ -60,6 +60,7 @@ class CwsPosUse:
                   maxSentenceLen: 最大句子长度值,默认值为80
                   maxWordNum: 最大单词长度值,默认值为50
                   userDictfile: [IN] 用户词典文件,可以不设置
+                  usePos: 是否使用词性标注, 默认为True,若为false则只进行分词
         '''
         cwsModel = cwsModelfile if cwsModelfile else "kcws/models/cws_model.pbtxt"
         cwsVocab = cwsVocabfile if cwsVocabfile else "kcws/models/cws_vocab.txt"
@@ -70,20 +71,21 @@ class CwsPosUse:
         _maxSentenceLen = kwargs["maxSentenceLen"] if "maxSentenceLen" in kwargs else 80
         _maxWordNum = kwargs["maxWordNum"] if "maxWordNum" in kwargs else 50
         _userDict = kwargs["userDictfile"] if "userDictfile" in kwargs else ""
+        _usePos = kwargs["usePos"] if "usePos" in kwargs else True
         self.kp = py_kcws_pos.kcwsPosProcess()
         self.kp.kcwsSetEnvfilePars(cwsModel, cwsVocab, posModel, wordVocab, posVocab,
-                _maxSentenceLen, _maxWordNum, _userDict)
+                _maxSentenceLen, _maxWordNum, _userDict, _usePos)
 
-    def preocessSentence(self, srcstr, deststr, usePos=True):
+    def preocessSentence(self, srcstr):
         '''
             描述:
-                使用模型进行分词和词性标注
+                使用模型进行分词[和词性标注]
             参数:
                 srcstr: [IN] 原始字符串
-                deststr: [OUT] 分词后和词性标注后的字符串
-                usePos: 是否使用词性标注,若为false则只进行分词
+            返回值: 
+                [OUT] 分词后[和词性标注后]的字符串
         '''
-        self.kp.kcwsPosProcessSentence(srcstr, deststr, usePos)
+        return self.kp.kcwsPosProcessSentence(srcstr)
 
 
 # Chinese Word Segment --cws--
