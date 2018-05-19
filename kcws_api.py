@@ -313,7 +313,7 @@ class PosTrain:
         os.system("shuf pos_train_tmp/pos_train.u > " + allfile)
         os.system("head -n "+ str(int(lines*0.75)) +" " + allfile +" > " + self.fposTrain)
         os.system("tail -n "+ str(int(lines*0.25)) +" " + allfile +" > " + self.fposTest)
-        os.system("cp " + fposVocab + "kcws/models")
+        os.system("cp " + fposVocab + " kcws/models/")
         
     def posTrain(self, **kwargs):
         '''

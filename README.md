@@ -13,7 +13,8 @@
 * 使用  
   参考: **kcws_api_test.py** 和 **kcws_api.py** 直接训练和使用  
   * 注意类使用顺序: CwsTrain --> PosTrain --> CwsPosUse  
-  * 测试时先可以用: python kcws_api_test.py执行代码看看测试结果:   
+  * 测试时先可以用: python kcws_api_test.py执行代码(已屏蔽代码训练,只是执行使用模型)  
+    看看测试结果:   
   ```
   2018-05-19 09:42:11.919420: W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use AVX2 instructions, but these are available on your machine and could speed up CPU computations.
   2018-05-19 09:42:11.919452: W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use FMA instructions, but these are available on your machine and could speed up CPU computations.
