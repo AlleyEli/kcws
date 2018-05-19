@@ -22,9 +22,9 @@
 class kcwsPosProcess{
 public:
     kcwsPosProcess(){}
-    void kcws_set_envfile_pars(const char * model_file, const char * vocab_file, const char * pos_model_file,
-            const char * word_vocab_file, const char * pos_vocab_file, const int max_sentence_len,
-            const int max_word_num, const char * user_dict_file, bool use_pos);
+    void kcws_set_envfile_pars(const char * cws_model_file, const char * cws_vocab_file, 
+            const char * pos_model_file, const char * pos_vocab_file, const int max_sentence_len,
+            const int max_word_num, const char * user_dict_file, const bool use_pos);
     char* kcws_pos_process(const char* srcsentence);
 
 private:

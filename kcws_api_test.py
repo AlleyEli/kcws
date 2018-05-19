@@ -23,7 +23,8 @@ def postrain():
 
 def usekcws():
         cp = kcws_api.CwsPosUse()
-        cp.setEnv(usePos=False)
+        # cp.setEnv(usePos=False)
+        cp.setEnv(usePos=True)
         # "梁伟新/nr 出任/v 漳州市/ns 副市长"
         srcstr="梁伟新出任漳州市副市长"
         outstr = cp.preocessSentence(srcstr)
@@ -31,8 +32,8 @@ def usekcws():
         print "outstr : " + outstr
 
 
-#cwstrain()
-#postrain()
+# cwstrain()
+# postrain()
 usekcws()
 
 

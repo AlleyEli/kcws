@@ -66,14 +66,13 @@ class CwsPosUse:
         cwsVocab = cwsVocabfile if cwsVocabfile else "kcws/models/cws_vocab.txt"
         posModel = posModelfile if posModelfile else "kcws/models/pos_model.pbtxt"
         posVocab = posVocabfile if posVocabfile else "kcws/models/pos_vocab.txt"
-        wordVocab = "kcws/models/word_vocab.txt"
 
         _maxSentenceLen = kwargs["maxSentenceLen"] if "maxSentenceLen" in kwargs else 80
         _maxWordNum = kwargs["maxWordNum"] if "maxWordNum" in kwargs else 50
         _userDict = kwargs["userDictfile"] if "userDictfile" in kwargs else ""
         _usePos = kwargs["usePos"] if "usePos" in kwargs else True
         self.kp = py_kcws_pos.kcwsPosProcess()
-        self.kp.kcwsSetEnvfilePars(cwsModel, cwsVocab, posModel, wordVocab, posVocab,
+        self.kp.kcwsSetEnvfilePars(cwsModel, cwsVocab, posModel, posVocab,
                 _maxSentenceLen, _maxWordNum, _userDict, _usePos)
 
     def preocessSentence(self, srcstr):
@@ -179,7 +178,7 @@ class CwsTrain:
             kwargs:
                 maxSentenceLen: 最大句子长度,默认值80
                 embeddingSize: 特征向量维度,默认值50
-                numTags: 标签数量,默认值4
+                numTags: 标签数量,默认值4 (Begin;Mid;End;Single)
                 numHidden: 隐含层单元数量,默认值100
                 batchSize: 每次送给神经网络的样本数量,默认值100
                 trainSteps:训练次数,默认值150000
@@ -314,6 +313,7 @@ class PosTrain:
         os.system("shuf pos_train_tmp/pos_train.u > " + allfile)
         os.system("head -n "+ str(int(lines*0.75)) +" " + allfile +" > " + self.fposTrain)
         os.system("tail -n "+ str(int(lines*0.25)) +" " + allfile +" > " + self.fposTest)
+        os.system("cp " + fposVocab + "kcws/models")
         
     def posTrain(self, **kwargs):
         '''

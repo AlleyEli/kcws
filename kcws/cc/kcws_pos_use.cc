@@ -9,25 +9,24 @@
 #include "kcws_pos_use.h"
 
 
-void kcwsPosProcess::kcws_set_envfile_pars(const char * model_file,
-                           const char * vocab_file,
+void kcwsPosProcess::kcws_set_envfile_pars(const char * cws_model_file,
+                           const char * cws_vocab_file,
                            const char * pos_model_file,
-                           const char * word_vocab_file,
                            const char * pos_vocab_file,
                            const int max_sentence_len,
                            const int max_word_num,
                            const char * user_dict_file,
-                           bool use_pos){
+                           const bool use_pos){
     usePos = use_pos;
-    CHECK(model.LoadModel(model_file,
-                          vocab_file,
+    CHECK(model.LoadModel(cws_model_file,
+                          cws_vocab_file,
                           max_sentence_len,
                           user_dict_file)) << "Load cws model error";
     if (usePos) {
         kcws::PosTagger* tagger = new kcws::PosTagger;
         CHECK(tagger->LoadModel(pos_model_file,
-                                word_vocab_file,
-                                vocab_file,
+                                pos_vocab_file,
+                                cws_vocab_file,
                                 pos_vocab_file,
                                 max_word_num)) << "load pos model error";
         model.SetPosTagger(tagger);
