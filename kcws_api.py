@@ -8,6 +8,7 @@
 import os
 import sys
 import ctypes
+import json
 
 sys.path.append(r"kcws/train")
 sys.path.append(r"kcws/cc")
@@ -29,16 +30,33 @@ import train_pos_hy as tp
 import freeze_graph as fp
 
 
-# class Log:
-#     HEAD = '\033[92m'
-#     TAIL = '\033[0m'
+class JsonDecoder:
+    pars = {}
+    @staticmethod
+    def load(jsonfilepath):
+        '''
+            描述:
+                解析jsonfilepath文件
+            参数:
+                jsonfilepath: [IN] json文件路径
+        '''
+        jfile = open(jsonfilepath,"rb")
+        JsonDecoder.pars = json.load(jfile)
 
-#     @staticmethod
-#     def p(var):
-#         '''
-#             print coloured log
-#         '''
-#         print Log.HEAD, var, Log.TAIL
+    @staticmethod
+    def getPars(category):
+        '''
+            描述:
+                获取训练参数
+            参数:
+                category: 获取的参数类别,只能为下面四种
+                    "cws_word2vec"
+                    "cws_train"
+                    "pos_word2vec"
+                    "pos_train"
+            返回值: 参数的字典
+        '''
+        return JsonDecoder.pars[category]
 
 
 class CwsPosUse:
@@ -66,7 +84,7 @@ class CwsPosUse:
         cwsVocab = cwsVocabfile if cwsVocabfile else "kcws/models/cws_vocab.txt"
         posModel = posModelfile if posModelfile else "kcws/models/pos_model.pbtxt"
         posVocab = posVocabfile if posVocabfile else "kcws/models/pos_vocab.txt"
-
+        
         _maxSentenceLen = kwargs["maxSentenceLen"] if "maxSentenceLen" in kwargs else 80
         _maxWordNum = kwargs["maxWordNum"] if "maxWordNum" in kwargs else 50
         _userDict = kwargs["userDictfile"] if "userDictfile" in kwargs else ""
@@ -110,6 +128,7 @@ class CwsTrain:
         self.fcharvec = self.tmpdir + "chars_vec.txt"
         self.fcwsTest = self.tmpdir + "test.txt"
         self.cwslogdir="cws_logs"
+        JsonDecoder.load("parameters.json")
 
     def prepWord2vec(self):
         '''
@@ -117,40 +136,23 @@ class CwsTrain:
         '''
         fpreCharsw2v = self.tmpdir + "pre_chars_for_w2v.txt"
         paf.processAnnoFile(self.corpusdir, fpreCharsw2v)
-        
+
         minCount = 3
         fpreVocab = self.tmpdir + "pre_vocab.txt"
         self.w2v.word2vec_get_vocab.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int]
         self.w2v.word2vec_get_vocab(fpreCharsw2v, fpreVocab, minCount)
-
         ru.replaceUNK(fpreVocab, fpreCharsw2v, self.fcharsw2v)
-    
-    def word2vecTrain(self, charvecfile=None, **kwargs):
+
+    def word2vecTrain(self, charvecfile=None, size=100, mincount=5):
         '''
         描述:
             通过word2vec训练字频表生成字特征向量
         参数:
             charsW2Vfile: [OUT] 生成的字特征向量表文件
-            kwargs
-                size: 特征向量的维度,默认100
-                sample: 高频词汇的随机降采样的配置阈值,默认1e-3
-                negative: 是否使用Negative Sampling, 0不使用, >0为使用
-                hs: 是否使用Hierarchical Softmax算法,默认为0不使用, 1为使用,与negative互斥
-                binary: 将生成的向量保存在二进制代码中,默认为0不保存
-                iter: 迭代次数,默认为5
-                window: 表示当前词与预测词在一个句子中的最大距离是多少,默认值5
-                cbow: 是否使用cbow模型,0表示使用skip-gram模型,1表示使用cbow模型,默认1
-                mincount: 可以对字典做截断. 词频少于min_count次数的单词会被丢弃掉,默认值5
+            size: 特征向量的维度,默认100
+            mincount: 可以对字典做截断. 词频少于min_count次数的单词会被丢弃掉,默认值5
         '''
-        _size = kwargs["size"] if "size" in kwargs else 100
-        _sample = kwargs["sample"] if "sample" in kwargs else 1e-3
-        _negative = kwargs["negative"] if "negative" in kwargs else 5
-        _hs = kwargs["hs"] if "hs" in kwargs else 0
-        _binary = kwargs["binary"] if "binary" in kwargs else 0
-        _iter = kwargs["iter"] if "iter" in kwargs else 5
-        _window = kwargs["window"] if "window" in kwargs else 5
-        _cbow = kwargs["cbow"] if "cbow" in kwargs else 1
-        _mincount = kwargs["mincount"] if "mincount" in kwargs else 5
+        pars = JsonDecoder.getPars("cws_word2vec")
 
         if charvecfile:
             self.fcharvec = charvecfile
@@ -158,8 +160,9 @@ class CwsTrain:
         self.w2v.word2vec_train.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int, 
                 ctypes.c_float, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
                 ctypes.c_int, ctypes.c_int, ctypes.c_int]
-        self.w2v.word2vec_train(self.fcharsw2v, self.fcharvec, _size, _sample, _negative, 
-                _hs, _binary, _iter, _window, _cbow, _mincount)
+        self.w2v.word2vec_train(self.fcharsw2v, self.fcharvec, size, pars["sample"], 
+                pars["negative"], pars["hs"], pars["binary"], pars["iter"], pars["window"],
+                pars["cbow"], mincount)
 
     def prepCws(self):
         '''
@@ -169,7 +172,7 @@ class CwsTrain:
         gt.generateTraining(self.fcharvec, self.corpusdir, allfile)
         fs.filter_sentence(allfile, self.fcwsTrain, self.fcwsTest)
 
-    def cwsTrain(self, useIdcnn=True, **kwargs):
+    def cwsTrain(self, useIdcnn=True, maxSentenceLen=80, embeddingSize=50):
         '''
         描述:
             进行分词模型训练
@@ -178,26 +181,11 @@ class CwsTrain:
             kwargs:
                 maxSentenceLen: 最大句子长度,默认值80
                 embeddingSize: 特征向量维度,默认值50
-                numTags: 标签数量,默认值4 (Begin;Mid;End;Single)
-                numHidden: 隐含层单元数量,默认值100
-                batchSize: 每次送给神经网络的样本数量,默认值100
-                trainSteps:训练次数,默认值150000
-                learningRate: 学习率,默认值0.001
-                trackHistory: 最大历史精度跟踪次数,默认值6
         '''
-
-        _maxSentenceLen = kwargs["maxSentenceLen"] if "maxSentenceLen" in kwargs else 80
-        _embeddingSize = kwargs["embeddingSize"] if "embeddingSize" in kwargs else 50
-        _numTags = kwargs["numTags"] if "numTags" in kwargs else 4
-        _numHidden = kwargs["numHidden"] if "numHidden" in kwargs else 100
-        _batchSize = kwargs["batchSize"] if "batchSize" in kwargs else 100
-        _trainSteps = trainSteps["trainSteps"] if "trainSteps" in kwargs else 150000
-        _learningRate = kwargs["learningRate"] if "learningRate" in kwargs else 0.001
-        _trackHistory = kwargs["trackHistory"] if "trackHistory" in kwargs else 6
-
-        tc.cws_train(self.fcwsTrain, self.fcwsTest, self.fcharvec, self.cwslogdir, _numHidden, 
-                _batchSize, _trainSteps, _trackHistory, _maxSentenceLen, _embeddingSize, 
-                _numTags, _learningRate, useIdcnn)
+        pars = JsonDecoder.getPars("cws_train")
+        tc.cws_train(self.fcwsTrain, self.fcwsTest, self.fcharvec, self.cwslogdir,
+                pars["numHidden"], pars["batchSize"], pars["trainSteps"], pars["trackHistory"],
+                maxSentenceLen, embeddingSize, pars["numTags"], pars["learningRate"], useIdcnn)
 
     def freeGraph(self, cwsVocabfile=None, outputGraphfile=None):
         '''
@@ -222,7 +210,6 @@ class PosTrain:
     '''
         对语料进行预处理和词性标注训练
     '''
-
     def __init__(self, corpusdir):
         '''
             描述:
@@ -243,6 +230,7 @@ class PosTrain:
         # fcharvec使用cwsword2vec训练结果文件
         self.fcharvec = "cws_train_tmp/chars_vec.txt"
         self.poslogdir = "pos_logs"
+        JsonDecoder.load("parameters.json")
 
     def prepWord2vec(self):
         '''
@@ -259,41 +247,25 @@ class PosTrain:
 
         ru.replaceUNK(fvocab, fposLines, self.fposlinesUnk)
 
-    def word2vecTrain(self, worldVecfile=None, **kwargs):
+    def word2vecTrain(self, worldVecfile=None, size=100, mincount=5):
         '''
         描述:
             通过word2vec训练词频表生成词特征向量
         参数:
             charsW2Vfile: [OUT] 生成的词特征向量表文件
-            kwargs
-                size: 词特征向量的维度,默认值100
-                sample: 高频词汇的随机降采样的配置阈值,默认值1e-3
-                negative: 是否使用Negative Sampling, 0不使用, >0为使用
-                hs: 是否使用Hierarchical Softmax算法,默认为0不使用, 1为使用,与negative互斥
-                binary: 将生成的向量保存在二进制代码中,默认为0不保存
-                iter: 迭代次数,默认值5
-                window: 表示当前词与预测词在一个句子中的最大距离是多少,默认值5
-                cbow: 是否使用cbow模型,0表示使用skip-gram模型,1表示使用cbow模型,默认值1
-                mincount: 可以对词典做截断. 词频少于min_count次数的单词会被丢弃掉,默认值5
+            size: 词特征向量的维度,默认值100
+            mincount: 可以对词典做截断. 词频少于min_count次数的单词会被丢弃掉,默认值5
         '''
-        _size = kwargs["size"] if "size" in kwargs else 100
-        _sample = kwargs["sample"] if "sample" in kwargs else 1e-3
-        _negative = kwargs["negative"] if "negative" in kwargs else 5
-        _hs = kwargs["hs"] if "hs" in kwargs else 0
-        _binary = kwargs["binary"] if "binary" in kwargs else 0
-        _iter = kwargs["iter"] if "iter" in kwargs else 5
-        _window = kwargs["window"] if "window" in kwargs else 5
-        _cbow = kwargs["cbow"] if "cbow" in kwargs else 1
-        _mincount = kwargs["mincount"] if "mincount" in kwargs else 5
-
+        pars = JsonDecoder.getPars("pos_word2vec")
         if worldVecfile:
             self.fwordvec = worldVecfile
 
         self.w2v.word2vec_train.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int, 
                 ctypes.c_float, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
                 ctypes.c_int, ctypes.c_int, ctypes.c_int]
-        self.w2v.word2vec_train(self.fposlinesUnk, self.fwordvec, _size, _sample, _negative, 
-                _hs, _binary, _iter, _window, _cbow, _mincount)
+        self.w2v.word2vec_train(self.fposlinesUnk, self.fwordvec, size, pars["sample"], 
+                pars["negative"], pars["hs"], pars["binary"], pars["iter"], pars["window"],
+                pars["cbow"], mincount)
 
     def prepPos(self):
         '''
@@ -303,7 +275,6 @@ class PosTrain:
         linPos = self.tmpdir + "lines_withpos.txt"
         fposVocab = self.tmpdir + "pos_vocab.txt"
         sp.stats_pos(self.corpusdir, fposVocab, linPos)
-
         allfile = self.tmpdir + "pos_all.txt"
 
         gps.generatepostrain(self.fwordvec, self.fcharvec, fposVocab, self.corpusdir, allfile)
@@ -315,38 +286,21 @@ class PosTrain:
         os.system("tail -n "+ str(int(lines*0.25)) +" " + allfile +" > " + self.fposTest)
         os.system("cp " + fposVocab + " kcws/models/")
         
-    def posTrain(self, **kwargs):
+    def posTrain(self, maxSentenceLen=50, embeddingWordSize=150, embeddingCharSize=50):
         '''
             描述:
                 进行词性标注训练
             参数:
-                kwargs:
-                  maxSentenceLen: 最大句子长度,默认值50
-                  embeddingWordSize: 词特征向量维度,默认值150
-                  embeddingCharSize: 字特征向量维度,默认值50
-                  numTags: 词性标注标签数量,默认值74
-                  numHidden: 隐含层单元数量,默认值100
-                  batchSize: 每次送给神经网络的样本数量,默认值64
-                  trainSteps:训练次数,默认值50000
-                  learningRate: 学习率,默认值0.001
-                  charWindowSize: 字符卷积的窗口大小,默认值2
-                  maxCharsPerWord: 单词最大字符数量,默认值5
+                maxSentenceLen: 最大句子长度,默认值50
+                embeddingWordSize: 词特征向量维度,默认值150
+                embeddingCharSize: 字特征向量维度,默认值50
         '''
-
-        _maxSentenceLen = kwargs["maxSentenceLen"] if "maxSentenceLen" in kwargs else 50
-        _embeddingWordSize = kwargs["embeddingWordSize"] if "embeddingWordSize" in kwargs else 150
-        _embeddingCharSize = kwargs["embeddingCharSize"] if "embeddingCharSize" in kwargs else 50
-        _numTags = kwargs["numTags"] if "numTags" in kwargs else 74
-        _numHidden = kwargs["numHidden"] if "numHidden" in kwargs else 100
-        _batchSize = kwargs["batchSize"] if "batchSize" in kwargs else 64
-        _trainSteps = trainSteps["trainSteps"] if "trainSteps" in kwargs else 50000
-        _learningRate = kwargs["learningRate"] if "learningRate" in kwargs else 0.001
-        _charWindowSize = kwargs["charWindowSize"] if "charWindowSize" in kwargs else 2
-        _maxCharsPerWord = kwargs["maxCharsPerWord"] if "maxCharsPerWord" in kwargs else 5
+        pars = JsonDecoder.getPars("pos_train")
 
         tp.pos_train(self.fposTrain, self.fposTest, self.fwordvec, self.fcharvec, self.poslogdir, 
-                _maxSentenceLen, _embeddingWordSize, _embeddingCharSize, _numTags, 
-                _charWindowSize, _maxCharsPerWord, _numHidden, _batchSize, _trainSteps, _learningRate)
+                maxSentenceLen, embeddingWordSize, embeddingCharSize, pars["numTags"], 
+                pars["charWindowSize"], pars["maxCharsPerWord"], pars["numHidden"],
+                pars["batchSize"], pars["trainSteps"], pars["learningRate"])
 
     def freeGraph(self, outputGraphfile=None):
         '''

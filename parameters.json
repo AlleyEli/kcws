@@ -1,0 +1,40 @@
+{
+    "cws_word2vec": {
+        "sample": 1e-4,
+        "negative": 0,
+        "hs": 1,
+        "binary": 0,
+        "iter": 5,
+        "window": 5,
+        "cbow": 1
+    },
+
+    "cws_train": {
+        "numTags": 4,
+        "numHidden": 100,
+        "batchSize": 100,
+        "trainSteps":150000,
+        "learningRate": 0.001,
+        "trackHistory": 6
+    },
+
+    "pos_word2vec": {
+        "sample": 1e-4,
+        "negative": 0,
+        "hs": 1,
+        "binary": 0,
+        "iter": 5,
+        "window": 5,
+        "cbow": 0
+    },
+
+    "pos_train":{
+        "numTags": 74,
+        "numHidden": 100,
+        "batchSize": 64,
+        "trainSteps":50000,
+        "learningRate": 0.001,
+        "charWindowSize": 2,
+        "maxCharsPerWord": 5
+    }
+}
