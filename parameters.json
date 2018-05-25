@@ -1,4 +1,12 @@
 {
+    "cws_pos_use":{
+        "fcwsModel": "kcws/models/cws_model.pbtxt",
+        "fcwsVocab": "kcws/models/cws_vocab.txt",
+        "fposModel": "kcws/models/pos_model.pbtxt",
+        "fposVocab": "kcws/models/pos_vocab.txt",
+        "fuserDict": ""
+    },
+
     "cws_word2vec": {
         "sample": 1e-4,
         "negative": 0,
@@ -20,10 +28,10 @@
 
     "pos_word2vec": {
         "sample": 1e-4,
-        "negative": 0,
-        "hs": 1,
+        "negative": 5,
+        "hs": 0,
         "binary": 0,
-        "iter": 5,
+        "iter": 3,
         "window": 5,
         "cbow": 0
     },

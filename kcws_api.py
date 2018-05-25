@@ -30,6 +30,7 @@ import train_pos_hy as tp
 import freeze_graph as fp
 
 
+# Docoder parameters.json file
 class JsonDecoder:
     pars = {}
     @staticmethod
@@ -49,49 +50,38 @@ class JsonDecoder:
             描述:
                 获取训练参数
             参数:
-                category: 获取的参数类别,只能为下面四种
+                category: 获取的参数类别,只能为下面五种
                     "cws_word2vec"
                     "cws_train"
                     "pos_word2vec"
                     "pos_train"
+                    "cws_pos_use"
             返回值: 参数的字典
         '''
         return JsonDecoder.pars[category]
 
 
+# Use Chinese Word Segment and Part-of-speech tagging model --cwsposuse--
 class CwsPosUse:
     '''
         CwsPosUse 为经过CwsPosTrain训练好模型后,可通过CwsPosUse使用模型进行分词和词性标注
     '''
 
-    def setEnv(self, cwsModelfile=None, cwsVocabfile=None, posModelfile=None, 
-            posVocabfile=None, **kwargs):
+    def setEnv(self, maxSentenceLen=80, maxWordNum=50, usePos=True):
         '''
             描述:
                 设置模型文件和参数,
             参数:
-                cwsModelfile: [IN] 分词模型训练后导出后的文件
-                cwsVocabfile: [IN] 分词语料生成特征向量导出后的文件
-                posModelfile: [IN] 词性标注模型训练后导出后的文件
-                posVocabfile: [IN] 词性标注语料生成特征向量导出后的文件
-                kwargs:
                   maxSentenceLen: 最大句子长度值,默认值为80
                   maxWordNum: 最大单词长度值,默认值为50
-                  userDictfile: [IN] 用户词典文件,可以不设置
                   usePos: 是否使用词性标注, 默认为True,若为false则只进行分词
         '''
-        cwsModel = cwsModelfile if cwsModelfile else "kcws/models/cws_model.pbtxt"
-        cwsVocab = cwsVocabfile if cwsVocabfile else "kcws/models/cws_vocab.txt"
-        posModel = posModelfile if posModelfile else "kcws/models/pos_model.pbtxt"
-        posVocab = posVocabfile if posVocabfile else "kcws/models/pos_vocab.txt"
-        
-        _maxSentenceLen = kwargs["maxSentenceLen"] if "maxSentenceLen" in kwargs else 80
-        _maxWordNum = kwargs["maxWordNum"] if "maxWordNum" in kwargs else 50
-        _userDict = kwargs["userDictfile"] if "userDictfile" in kwargs else ""
-        _usePos = kwargs["usePos"] if "usePos" in kwargs else True
+        JsonDecoder.load("parameters.json")
+        pars = JsonDecoder.getPars("cws_pos_use")
+
         self.kp = py_kcws_pos.kcwsPosProcess()
-        self.kp.kcwsSetEnvfilePars(cwsModel, cwsVocab, posModel, posVocab,
-                _maxSentenceLen, _maxWordNum, _userDict, _usePos)
+        self.kp.kcwsSetEnvfilePars(pars["fcwsModel"], pars["fcwsVocab"], pars["fposModel"], 
+                pars["fposVocab"], maxSentenceLen, maxWordNum, pars["fuserDict"], usePos)
 
     def preocessSentence(self, srcstr):
         '''
@@ -143,19 +133,15 @@ class CwsTrain:
         self.w2v.word2vec_get_vocab(fpreCharsw2v, fpreVocab, minCount)
         ru.replaceUNK(fpreVocab, fpreCharsw2v, self.fcharsw2v)
 
-    def word2vecTrain(self, charvecfile=None, size=100, mincount=5):
+    def word2vecTrain(self, size=100, mincount=5):
         '''
         描述:
             通过word2vec训练字频表生成字特征向量
         参数:
-            charsW2Vfile: [OUT] 生成的字特征向量表文件
             size: 特征向量的维度,默认100
             mincount: 可以对字典做截断. 词频少于min_count次数的单词会被丢弃掉,默认值5
         '''
         pars = JsonDecoder.getPars("cws_word2vec")
-
-        if charvecfile:
-            self.fcharvec = charvecfile
                 
         self.w2v.word2vec_train.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int, 
                 ctypes.c_float, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
@@ -247,18 +233,15 @@ class PosTrain:
 
         ru.replaceUNK(fvocab, fposLines, self.fposlinesUnk)
 
-    def word2vecTrain(self, worldVecfile=None, size=100, mincount=5):
+    def word2vecTrain(self, size=100, mincount=5):
         '''
         描述:
             通过word2vec训练词频表生成词特征向量
         参数:
-            charsW2Vfile: [OUT] 生成的词特征向量表文件
             size: 词特征向量的维度,默认值100
             mincount: 可以对词典做截断. 词频少于min_count次数的单词会被丢弃掉,默认值5
         '''
         pars = JsonDecoder.getPars("pos_word2vec")
-        if worldVecfile:
-            self.fwordvec = worldVecfile
 
         self.w2v.word2vec_train.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int, 
                 ctypes.c_float, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,

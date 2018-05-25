@@ -10,6 +10,7 @@
   2. 切换到本项目代码目录，运行  
     > **./configure**  
     > **./compiletool**  
+* 参数配置: 修改parameters.json文件即可
 * 使用  
   参考: **kcws_api_test.py** 和 **kcws_api.py** 直接训练和使用  
   * 注意类使用顺序: CwsTrain --> PosTrain --> CwsPosUse  
