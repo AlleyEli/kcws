@@ -66,20 +66,22 @@ class CwsPosUse:
     '''
         CwsPosUse 为经过CwsPosTrain训练好模型后,可通过CwsPosUse使用模型进行分词和词性标注
     '''
-
-    def setEnv(self, maxSentenceLen=80, maxWordNum=50, usePos=True):
+    def __init__(self, maxSentenceLen=80, maxWordNum=50, usePos=False, debug=False):
         '''
             描述:
-                设置模型文件和参数,
+                初始化环境,即设置模型文件和各参数,
             参数:
                   maxSentenceLen: 最大句子长度值,默认值为80
                   maxWordNum: 最大单词长度值,默认值为50
                   usePos: 是否使用词性标注, 默认为True,若为false则只进行分词
+                  debug: 若为True, 分词结果每次都会打印到屏幕
         '''
         JsonDecoder.load("parameters.json")
         pars = JsonDecoder.getPars("cws_pos_use")
 
         self.kp = py_kcws_pos.kcwsPosProcess()
+        self.debug = debug
+
         self.kp.kcwsSetEnvfilePars(pars["fcwsModel"], pars["fcwsVocab"], pars["fposModel"], 
                 pars["fposVocab"], maxSentenceLen, maxWordNum, pars["fuserDict"], usePos)
 
@@ -92,7 +94,10 @@ class CwsPosUse:
             返回值: 
                 [OUT] 分词后[和词性标注后]的字符串
         '''
-        return self.kp.kcwsPosProcessSentence(srcstr)
+        outstr = self.kp.kcwsPosProcessSentence(srcstr)
+        if self.debug:
+            print '\033[92m' + outstr + '\033[0m'
+        return outstr
 
 
 # Chinese Word Segment --cws--
