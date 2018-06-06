@@ -73,7 +73,7 @@ class CwsPosUse:
             参数:
                   maxSentenceLen: 最大句子长度值,默认值为80
                   maxWordNum: 最大单词长度值,默认值为50
-                  usePos: 是否使用词性标注, 默认为True,若为false则只进行分词
+                  usePos: 是否使用词性标注, 默认为false(只进行分词)
                   debug: 若为True, 分词结果每次都会打印到屏幕
         '''
         JsonDecoder.load("parameters.json")
