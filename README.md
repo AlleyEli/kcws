@@ -32,7 +32,7 @@
   2018-05-19 09:42:12.026460: I kcws/cc/pos_tagger.cc:218] Reading from layer transitions
   2018-05-19 09:42:12.026487: I kcws/cc/pos_tagger.cc:224] got num tag:74
   stcstr : 梁伟新出任漳州市副市长
-  outstr : 梁伟新/nr 出任/nz 漳州市/nz 副市长/nn
+  outstr : 梁伟新 出任 漳州市 副市长
   ```
 
   * 具体使用参考kcws_api_test.py修改即可.用法基本一样

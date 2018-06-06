@@ -4,7 +4,7 @@
         "fcwsVocab": "kcws/models/cws_vocab.txt",
         "fposModel": "kcws/models/pos_model.pbtxt",
         "fposVocab": "kcws/models/pos_vocab.txt",
-        "fuserDict": ""
+        "fuserDict": "dict.txt"
     },
 
     "cws_word2vec": {

@@ -96,7 +96,8 @@ class CwsPosUse:
         '''
         outstr = self.kp.kcwsPosProcessSentence(srcstr)
         if self.debug:
-            print '\033[92m' + outstr + '\033[0m'
+            print '[IN]:  \033[92m' + srcstr + '\033[0m'
+            print '[OUT]: \033[92m' + outstr + '\033[0m'
         return outstr
 
 
